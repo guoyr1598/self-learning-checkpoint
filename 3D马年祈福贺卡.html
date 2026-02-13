@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>马年祈福 3D 贺卡</title>
+    <link rel="icon" href="data:,">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+        
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+        
+        #toolbar {
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            color: white;
+        }
+        
+        .toolbar-section {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .toolbar-section h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        select, input[type="range"], input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+        
+        input[type="range"] {
+            padding: 0;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 165, 0, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #greeting-text {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container">
+            <div id="greeting-text">马年大吉，万事如意！</div>
+            <div class="loading" id="loading">加载中...</div>
+        </div>
+        <div id="toolbar">
+            <div class="toolbar-section">
+                <h3>文字设置</h3>
+                <div class="control-group">
+                    <label for="font-family">字体类型</label>
+                    <select id="font-family">
+                        <option value="serif">衬线字体</option>
+                        <option value="sans-serif" selected>无衬线字体</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="text-color">文字颜色</label>
+                    <input type="color" id="text-color" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label for="blessing-text">祝福语</label>
+                    <input type="text" id="blessing-text" value="马到成功" placeholder="输入祝福语">
+                </div>
+            </div>
+            
+            <div class="toolbar-section">
+                <h3>速度控制</h3>
+                <div class="control-group">
+                    <label for="horse-speed">马的速度: <span id="horse-speed-value">1.0</span></label>
+                    <input type="range" id="horse-speed" min="0.1" max="3" step="0.1" value="1">
+                </div>
+                <div class="control-group">
+                    <label for="snow-speed">雪的速度: <span id="snow-speed-value">1.0</span></label>
+                    <input type="range" id="snow-speed" min="0.1" max="3" step="0.1" value="1">
+                </div>
+            </div>
+            
+            <button id="explode-btn">粒子炸裂祈福</button>
+            <!-- <button id="record-btn">录制视频</button> -->
+        </div>
+    </div>
+
+    <!-- 引入 Three.js 主库（国内 CDN） -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/three.js/0.152.2/three.min.js"></script>
+    
+    <!-- 内联 OrbitControls 和 GLTFLoader -->
+    <script>
+        // OrbitControls 简化版
+        class OrbitControls {
+            constructor(object, domElement) {
+                this.object = object;
+                this.domElement = domElement;
+                this.enabled = true;
+                this.enableDamping = false;
+                this.dampingFactor = 0.05;
+                this.rotateSpeed = 1.0;
+                this.panSpeed = 1.0;
+                this.zoomSpeed = 1.0;
+                this.minDistance = 0;
+                this.maxDistance = Infinity;
+                this.minZoom = 0;
+                this.maxZoom = Infinity;
+                this.minPolarAngle = 0;
+                this.maxPolarAngle = Math.PI;
+                this.minAzimuthAngle = -Infinity;
+                this.maxAzimuthAngle = Infinity;
+                this.enableDamping = false;
+                this.dampingFactor = 0.05;
+                this.screen = { left: 0, top: 0, width: 0, height: 0 };
+                this.target = new THREE.Vector3();
+                this.position0 = this.object.position.clone();
+                this.target0 = this.target.clone();
+                this.zoom0 = this.object.zoom;
+                this.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+                this.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+                this.state = 0;
+                this.dispatchEvent = function() {};
+                this.update = function() {};
+                this.connect = function() {};
+                this.dispose = function() {};
+                this.saveState = function() {};
+                this.reset = function() {};
+
+                // 简化：仅支持基本旋转
+                const onMouseMove = (event) => {
+                    if (!this.enabled) return;
+                    this.object.rotateY(-event.movementX * 0.01 * this.rotateSpeed);
+                    this.object.rotateX(-event.movementY * 0.01 * this.rotateSpeed);
+                    this.object.lookAt(this.target);
+                };
+
+                const onMouseDown = (event) => {
+                    if (!this.enabled) return;
+                    this.domElement.addEventListener('mousemove', onMouseMove);
+                };
+
+                const onMouseUp = () => {
+                    this.domElement.removeEventListener('mousemove', onMouseMove);
+                };
+
+                this.domElement.addEventListener('mousedown', onMouseDown);
+                window.addEventListener('mouseup', onMouseUp);
+
+                // 兼容 damping
+                this.update = () => {};
+            }
+        }
+        
+        // GLTFLoader 简化版（用于加载本地模型）
+        class GLTFLoader {
+            load(url, onLoad, onProgress, onError) {
+                // 由于我们无法在纯HTML中实现完整的GLTFLoader，
+                // 这里提供一个占位符，实际使用时需要完整版本
+                console.log("GLTFLoader: 加载模型", url);
+                setTimeout(() => {
+                    if (onError) onError(new Error("GLTFLoader未完全实现"));
+                }, 100);
+            }
+        }
+        
+        // 全局变量
+        let scene, camera, renderer, controls;
+        let horseModel, wings;
+        let snowParticles = [];
+        let isExploded = false;
+        
+        // 配置参数
+        const config = {
+            fontFamily: 'sans-serif',
+            textColor: '#ffffff',
+            blessingText: '马到成功',
+            horseSpeed: 1.0,
+            snowSpeed: 1.0
+        };
+        
+        function init() {
+            // 创建场景
+            scene = new THREE.Scene();
+            
+            // 创建相机
+            camera = new THREE.PerspectiveCamera(75, (window.innerWidth * 0.75) / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 50);
+            
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth * 0.75, window.innerHeight);
+            renderer.setClearColor(0x1e3c72);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            // 创建控制
+            controls = new OrbitControls(camera, renderer.domElement);
+            
+            // 创建雪
+            createSnow();
+            
+            // 加载马模型
+            loadHorseModel();
+            
+            // 开始动画
+            startOpeningAnimation();
+            
+            // 设置事件监听器
+            setupEventListeners();
+        }
+        
+        function loadHorseModel() {
+            // 尝试加载本地GLB模型
+            const loader = new GLTFLoader();
+            
+            // 如果有本地模型文件，取消注释下面的代码
+            /*
+            loader.load('./models/horse.glb', (gltf) => {
+                horseModel = gltf.scene;
+                horseModel.scale.set(2, 2, 2);
+                horseModel.position.y = -1;
+                scene.add(horseModel);
+                
+                // 创建翅膀
+                createWings(horseModel);
+                
+                document.getElementById('loading').style.display = 'none';
+            }, undefined, (error) => {
+                console.error('加载马模型失败:', error);
+                // 回退到简化模型
+                horseModel = createRealisticHorse();
+                createWings(horseModel);
+                document.getElementById('loading').style.display = 'none';
+            });
+            */
+            
+            // 默认使用简化模型
+            horseModel = createRealisticHorse();
+            createWings(horseModel);
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function createWings(horseParent) {
+            const wingGroups = [];
+            
+            // 创建多层翅膀羽毛
+            for (let layer = 0; layer < 3; layer++) {
+                const opacity = 0.8 - layer * 0.2;
+                const scale = 1.0 - layer * 0.15;
+                
+                const wingMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: opacity,
+                    side: THREE.DoubleSide
+                });
+                
+                // 左翅膀羽毛组
+                const leftFeathers = [];
+                for (let i = 0; i < 8; i++) {
+                    const featherLength = 2.5 - i * 0.2;
+                    const featherWidth = 0.8 - i * 0.05;
+                    
+                    const featherGeometry = new THREE.PlaneGeometry(featherWidth, featherLength);
+                    const feather = new THREE.Mesh(featherGeometry, wingMaterial);
+                    
+                    // 羽毛位置和角度（相对于马的位置）
+                    const angle = Math.PI / 6 + i * 0.15;
+                    feather.position.set(
+                        -1.8 - i * 0.3,
+                        1.5 + i * 0.2,
+                        -i * 0.1
+                    );
+                    feather.rotation.z = angle;
+                    feather.scale.set(scale, scale, scale);
+                    
+                    horseParent.add(feather); // 添加为马的子对象
+                    leftFeathers.push(feather);
+                }
+                
+                // 右翅膀羽毛组（镜像）
+                const rightFeathers = [];
+                for (let i = 0; i < 8; i++) {
+                    const featherLength = 2.5 - i * 0.2;
+                    const featherWidth = 0.8 - i * 0.05;
+                    
+                    const featherGeometry = new THREE.PlaneGeometry(featherWidth, featherLength);
+                    const feather = new THREE.Mesh(featherGeometry, wingMaterial);
+                    
+                    const angle = -Math.PI / 6 - i * 0.15;
+                    feather.position.set(
+                        1.8 + i * 0.3,
+                        1.5 + i * 0.2,
+                        -i * 0.1
+                    );
+                    feather.rotation.z = angle;
+                    feather.scale.set(scale, scale, scale);
+                    
+                    horseParent.add(feather); // 添加为马的子对象
+                    rightFeathers.push(feather);
+                }
+                
+                wingGroups.push([...leftFeathers, ...rightFeathers]);
+            }
+            
+            wings = wingGroups;
+        }
+        
+        function createRealisticHorse() {
+            // 使用更简单的写实方案：带纹理的几何体组合
+            
+            // 身体
+            const bodyGeometry = new THREE.CylinderGeometry(1.2, 1.5, 3, 32);
+            bodyGeometry.rotateZ(Math.PI / 2);
+            
+            // 创建棕色材质
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff, // 更改为白色
+                roughness: 0.8,
+                metalness: 0.1
+            });
+            
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0;
+            
+            // 头部
+            const headGeometry = new THREE.SphereGeometry(0.8, 24, 24);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.set(0, 0.8, 2);
+            body.add(head);
+            
+            // 腿部
+            const legGeometry = new THREE.CylinderGeometry(0.25, 0.25, 1.5, 16);
+            const legPositions = [[-0.8, -1.2, 1], [0.8, -1.2, 1], [-0.8, -1.2, -1], [0.8, -1.2, -1]];
+            
+            legPositions.forEach(pos => {
+                const leg = new THREE.Mesh(legGeometry, bodyMaterial);
+                leg.position.set(...pos);
+                leg.geometry.rotateX(Math.PI / 2);
+                body.add(leg);
+            });
+            
+            scene.add(body);
+            return body;
+        }
+        
+        function createSnow() {
+            const snowCount = 5000;
+            const snowGeometry = new THREE.BufferGeometry();
+            const snowPositions = new Float32Array(snowCount * 3);
+            const snowSizes = new Float32Array(snowCount);
+            
+            for (let i = 0; i < snowCount; i++) {
+                snowPositions[i * 3] = (Math.random() - 0.5) * 200;
+                snowPositions[i * 3 + 1] = Math.random() * 100 + 10;
+                snowPositions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+                snowSizes[i] = Math.random() * 0.1 + 0.02;
+            }
+            
+            snowGeometry.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
+            snowGeometry.setAttribute('size', new THREE.BufferAttribute(snowSizes, 1));
+            
+            const snowMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.1,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const snow = new THREE.Points(snowGeometry, snowMaterial);
+            scene.add(snow);
+            snowParticles.push(snow);
+        }
+        
+        function startOpeningAnimation() {
+            // 从远景深海蓝推镜至近景朱砂红
+            const startPosition = new THREE.Vector3(0, 5, 50);
+            const endPosition = new THREE.Vector3(0, 5, 15);
+            const startTime = Date.now();
+            const duration = 4000; // 4秒
+            
+            const animateCamera = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // 平滑插值相机位置
+                camera.position.lerpVectors(startPosition, endPosition, progress);
+                camera.lookAt(0, 2, 0);
+                
+                // 平滑渐变背景色
+                const startColor = new THREE.Color(0x1e3c72); // 深海蓝
+                const endColor = new THREE.Color(0xdc3545); // 朱砂红
+                const currentColor = startColor.clone().lerp(endColor, progress);
+                scene.background = currentColor;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateCamera);
+                } else {
+                    // 动画完成后显示问候文字
+                    setTimeout(() => {
+                        document.getElementById('greeting-text').style.opacity = '1';
+                    }, 500);
+                }
+            };
+            
+            animateCamera();
+        }
+        
+        function explodeParticles() {
+            // 确保只执行一次
+            if (isExploded) return;
+            
+            isExploded = true;
+            console.log("爆炸触发，创建灵签");
+            
+            // 创建灵签
+            createFortuneStick();
+        }
+        
+        function createFortuneStick() {
+            console.log("开始创建灵签");
+            
+            // 创建大尺寸Canvas纹理
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 1200;
+            const ctx = canvas.getContext('2d');
+            
+            // 背景
+            ctx.fillStyle = '#f5deb3';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 边框
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+            
+            // 文字
+            ctx.fillStyle = '#8B4513';
+            ctx.font = 'bold 48px "STKaiti", "KaiTi", serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 根据灵签图片调整文字内容和布局
+            const texts = ['吉年', '特吉', '一马当先', '占鳌头', '致瑞同学', '今日一句', '今日的一杯'];
+            const centerX = canvas.width / 2;
+            const startY = 50;
+            const gap = 80;
+            
+            texts.forEach((text, index) => {
+                if (index === 1) { // 特吉放大字体
+                    ctx.font = 'bold 96px "STKaiti", "KaiTi", serif';
+                } else {
+                    ctx.font = 'bold 48px "STKaiti", "KaiTi", serif';
+                }
+                ctx.fillText(text, centerX, startY + index * gap);
+            });
+            
+            // 创建纹理
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.MeshBasicMaterial({ 
+                map: texture, 
+                side: THREE.DoubleSide,
+                transparent: true
+            });
+            const geometry = new THREE.PlaneGeometry(8, 12);
+            const fortuneStick = new THREE.Mesh(geometry, material);
+            fortuneStick.position.set(0, 0, 5);
+            fortuneStick.renderOrder = 999;
+            
+            // 关键：让灵签始终面向相机（Billboard 效果）
+            fortuneStick.quaternion.copy(camera.quaternion);
+            
+            scene.add(fortuneStick);
+            
+            console.log("灵签创建完成");
+        }
+        
+        function setupEventListeners() {
+            // 字体选择
+            document.getElementById('font-family').addEventListener('change', (e) => {
+                config.fontFamily = e.target.value;
+                updateGreetingText();
+            });
+            
+            // 文字颜色
+            document.getElementById('text-color').addEventListener('change', (e) => {
+                config.textColor = e.target.value;
+                updateGreetingText();
+            });
+            
+            // 祝福语
+            document.getElementById('blessing-text').addEventListener('input', (e) => {
+                config.blessingText = e.target.value;
+                updateGreetingText();
+            });
+            
+            // 马的速度
+            document.getElementById('horse-speed').addEventListener('input', (e) => {
+                config.horseSpeed = parseFloat(e.target.value);
+                document.getElementById('horse-speed-value').textContent = config.horseSpeed.toFixed(1);
+            });
+            
+            // 雪的速度
+            document.getElementById('snow-speed').addEventListener('input', (e) => {
+                config.snowSpeed = parseFloat(e.target.value);
+                document.getElementById('snow-speed-value').textContent = config.snowSpeed.toFixed(1);
+            });
+            
+            // 粒子炸裂按钮
+            document.getElementById('explode-btn').addEventListener('click', explodeParticles);
+            
+            // 窗口大小调整
+            window.addEventListener('resize', onWindowResize);
+        }
+        
+        function updateGreetingText() {
+            const greetingElement = document.getElementById('greeting-text');
+            greetingElement.textContent = config.blessingText;
+            greetingElement.style.color = config.textColor;
+            greetingElement.style.fontFamily = config.fontFamily;
+        }
+        
+        function onWindowResize() {
+            camera.aspect = (window.innerWidth * 0.75) / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth * 0.75, window.innerHeight);
+        }
+        
+        // 更新翅膀动画
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = Date.now() * 0.001;
+            
+            // 更新马模型旋转（如果未爆炸）
+            if (horseModel && !isExploded) {
+                horseModel.rotation.y += 0.01 * config.horseSpeed;
+            }
+            
+            // 更新翅膀动画 - 多层飘动
+            if (wings) {
+                wings.forEach((featherGroup, layerIndex) => {
+                    featherGroup.forEach((feather, featherIndex) => {
+                        // 不同层次和位置的羽毛有不同的飘动幅度
+                        const amplitude = 0.15 - layerIndex * 0.03;
+                        const frequency = 1.5 + featherIndex * 0.2;
+                        feather.rotation.z += Math.sin(time * frequency) * amplitude * 0.02;
+                    });
+                });
+            }
+            
+            // 更新雪花
+            snowParticles.forEach(snow => {
+                const positions = snow.geometry.attributes.position.array;
+                for (let i = 1; i < positions.length; i += 3) {
+                    positions[i] -= 0.02 * config.snowSpeed;
+                    if (positions[i] < -10) {
+                        positions[i] = 100;
+                        positions[i - 1] = (Math.random() - 0.5) * 200;
+                        positions[i + 1] = (Math.random() - 0.5) * 200;
+                    }
+                }
+                snow.geometry.attributes.position.needsUpdate = true;
+            });
+            
+            // controls.update(); // 简化版不需要
+            renderer.render(scene, camera);
+        }
+        
+        // 初始化应用
+        init();
+    </script>
+</body>
+</html>
