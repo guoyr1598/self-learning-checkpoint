@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自学闯关 - 从0到1的学习路径规划</title>
+    <style>
+        :root {
+            --primary: #4e54c8;
+            --secondary: #8f94fb;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --beginner-color: #4CAF50;
+            --intermediate-color: #FF9800;
+            --advanced-color: #9C27B0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 15px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 15px;
+            color: white;
+        }
+        
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .card-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title::before {
+            content: "🎯";
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-right: 8px;
+            margin-top: 8px;
+        }
+        
+        button:hover {
+            background: var(--secondary);
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-success:hover {
+            background: #45a049;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+        
+        /* 资料库操作区域 */
+        .resources-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: var(--dark);
+        }
+        
+        .btn-warning:hover {
+            background: #ffb300;
+        }
+        
+        .resources-list {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 12px;
+        }
+        
+        .resource-item {
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            min-height: 120px;
+        }
+        
+        .resource-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .resource-info h4 {
+            margin-bottom: 4px;
+            color: var(--primary);
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .resource-info a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+        
+        .resource-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            flex-wrap: wrap;
+        }
+        
+        .difficulty-badge {
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        .difficulty-beginner { background: #e8f5e9; color: var(--beginner-color); }
+        .difficulty-intermediate { background: #fff3e0; color: var(--intermediate-color); }
+        .difficulty-advanced { background: #f3e5f5; color: var(--advanced-color); }
+        
+        .resource-actions {
+            display: flex;
+            gap: 5px;
+            margin-left: 10px;
+        }
+        
+        .action-btn {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            min-width: auto;
+        }
+        
+        /* 关卡系统样式 */
+        .levels-container {
+            margin-top: 20px;
+        }
+        
+        .level-card {
+            border-radius: 12px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .level-header {
+            padding: 12px 15px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .level-beginner .level-header { background: var(--beginner-color); }
+        .level-intermediate .level-header { background: var(--intermediate-color); }
+        .level-advanced .level-header { background: var(--advanced-color); }
+        
+        .level-locked .level-header {
+            background: #bdbdbd;
+            opacity: 0.6;
+        }
+        
+        .level-preview {
+            opacity: 0.4;
+        }
+        
+        .level-content {
+            padding: 15px;
+            background: #fafafa;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            overflow-y: auto; /* 添加滚动条 */
+            max-height: 400px; /* 根据需要调整 */
+        }
+
+        .level-expanded .level-content {
+            max-height: 400px; /* 与上面的 max-height 保持一致 */
+            padding: 15px;
+        }
+        
+        .day-cell {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .day-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .day-number {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+        
+        .day-tasks {
+            font-size: 0.9rem;
+        }
+        
+        .task-item {
+            background: var(--primary);
+            color: white;
+            padding: 4px 8px;
+            margin: 2px 0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: help;
+        }
+        
+        /* 打卡按钮样式 */
+        .completion-btn {
+            background: var(--light);
+            color: var(--dark);
+            border: 2px solid var(--primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 90px;
+            height: fit-content;
+            align-self: center;
+            white-space: nowrap;
+        }
+        
+        .completion-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .completion-btn.completed {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+        
+        .completion-btn.completed:hover {
+            background: #388e3c;
+            transform: scale(1.05);
+        }
+        
+        /* 进度导航条 */
+        .progress-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .nav-item {
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        .nav-item:hover {
+            transform: scale(1.05);
+        }
+        
+        .nav-beginner { background: var(--beginner-color); }
+        .nav-intermediate { background: var(--intermediate-color); }
+        .nav-advanced { background: var(--advanced-color); }
+        .nav-locked { background: #bdbdbd; opacity: 0.6; cursor: not-allowed; }
+        
+        .nav-current {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        }
+        
+        /* 数据导出导入区域 */
+        .data-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .data-control-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        /* 难度建议样式 */
+        .difficulty-suggestion {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.8rem; }
+            .card { padding: 15px; }
+            .card-title { font-size: 1.2rem; }
+            .resource-item {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .resource-actions {
+                align-self: flex-start;
+                margin-left: 0;
+            }
+            .progress-nav {
+                gap: 5px;
+            }
+            .nav-item {
+                padding: 6px 10px;
+                min-width: 60px;
+                font-size: 0.85rem;
+            }
+            button {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+            .day-cell {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .completion-btn {
+                align-self: flex-end;
+                min-width: auto;
+                padding: 6px 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            header { padding: 10px; }
+            header h1 { font-size: 1.5rem; }
+            .card { padding: 12px; }
+            .form-group { margin-bottom: 10px; }
+            input, select, textarea { padding: 8px; font-size: 0.9rem; }
+            .nav-item { 
+                padding: 5px 8px; 
+                min-width: 50px;
+                font-size: 0.8rem;
+            }
+            button { 
+                padding: 6px 12px; 
+                font-size: 0.85rem;
+                margin-right: 5px;
+                margin-top: 5px;
+            }
+        }
+        
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            padding: 15px;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+        
+        /* 修改后的回到顶部按钮样式 */
+        #backToTopBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: white;
+            color: var(--primary);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* 添加阴影效果使按钮更突出 */
+            border: 2px solid #343a40; /* 设置深色边框 */
+        }
+
+        #backToTopBtn span:first-child {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 自学闯关</h1>
+            <p>从0到1的学习路径规划 - 像小学生一样按部就班，埋头就是学！</p>
+            
+            <!-- 新增：顶栏Header -->
+            <div class="progress-nav" id="progressNav">
+                <!-- 动态生成导航项 -->
+                <div class="nav-item nav-beginner">🌱 新手村</div>
+                <div class="nav-item nav-intermediate">🔥 训练营</div>
+                <div class="nav-item nav-advanced">💎 大师殿</div>
+            </div>
+        </header>
+
+        <div class="card" id="addResourceCard">
+            <h2 class="card-title">添加学习资料</h2>
+            <div class="form-group">
+                <label for="resourceTitle">资料标题 *</label>
+                <input type="text" id="resourceTitle" placeholder="例如：Python零基础入门教程">
+            </div>
+            <div class="form-group">
+                <label for="resourceUrl">资料链接 *</label>
+                <input type="url" id="resourceUrl" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <label for="resourceDomain">领域/类别 *</label>
+                <select id="resourceDomain">
+                    <option value="">请选择领域</option>
+                    <option value="编程">编程</option>
+                    <option value="设计">设计</option>
+                    <option value="语言">语言</option>
+                    <option value="商业">商业</option>
+                    <option value="其他">其他</option>
+                </select>
+                <input type="text" id="customDomain" placeholder="或输入自定义领域" style="margin-top: 8px;">
+            </div>
+            <div class="form-group">
+                <label for="resourceDifficulty">难度等级 *</label>
+                <select id="resourceDifficulty">
+                    <option value="">请选择难度等级</option>
+                    <option value="beginner">入门 (小白友好)</option>
+                    <option value="intermediate">进阶 (有一定基础)</option>
+                    <option value="advanced">高阶 (深度掌握)</option>
+                </select>
+                <div id="difficultySuggestion" class="difficulty-suggestion"></div>
+            </div>
+            <div class="form-group">
+                <label for="resourceDuration">预计学习时长 (小时) *</label>
+                <input type="number" id="resourceDuration" min="0.5" step="0.5" placeholder="例如：2.5">
+            </div>
+            <button id="addResourceBtn">添加资料</button>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">我的学习资料库</h2>
+            <div class="resources-actions">
+                <button id="clearResourcesBtn" class="btn-danger">清空资料库</button>
+            </div>
+            <div id="resourcesList" class="resources-list">
+                <p id="noResources">暂无学习资料，请先添加一些资料！</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">学习路径规划</h2>
+            <div class="form-group">
+                <label for="totalDays">总学习天数</label>
+                <input type="number" id="totalDays" min="1" value="30" placeholder="例如：30">
+            </div>
+            <div class="form-group">
+                <label for="dailyHours">每日学习时长 (小时)</label>
+                <input type="number" id="dailyHours" min="0.5" step="0.5" value="1" placeholder="例如：1.5">
+            </div>
+            <div class="data-controls">
+                <div class="data-control-group">
+                    <button id="generatePlanBtn">生成学习计划</button>
+                </div>
+                <div class="data-control-group">
+                    <button id="resetPlanBtn" class="btn-success">重置计划</button>
+                </div>
+                <div class="data-control-group">
+                    <button id="exportDataBtn" class="btn-warning">导出数据</button>
+                </div>
+                <div class="data-control-group">
+                    <button id="importDataBtn" class="btn-warning">导入数据</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">自学闯关进度</h2>
+            <div class="levels-container" id="levelsContainer">
+                <!-- 动态生成关卡 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增：回到顶部按钮 -->
+    <button id="backToTopBtn" style="position: fixed; bottom: 20px; right: 20px; background-color: white; color: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: none;">
+        <span>↑</span>
+        <span>顶部</span>
+    </button>
+
+    <script>
+        // 存储学习资料和自定义领域
+        let resources = JSON.parse(localStorage.getItem('learningResources')) || [];
+        let customDomains = JSON.parse(localStorage.getItem('customDomains')) || [];
+        let currentEditingId = null;
+        
+        // 新增：存储学习计划相关数据
+        let savedPlanData = JSON.parse(localStorage.getItem('learningPlanData')) || null;
+        let savedTotalDays = localStorage.getItem('totalDays') || '30';
+        let savedDailyHours = localStorage.getItem('dailyHours') || '1';
+        
+        // 新增：存储打卡状态
+        let completedDays = JSON.parse(localStorage.getItem('completedDays')) || [];
+        
+        // DOM 元素
+        const resourceTitle = document.getElementById('resourceTitle');
+        const resourceUrl = document.getElementById('resourceUrl');
+        const resourceDomain = document.getElementById('resourceDomain');
+        const customDomain = document.getElementById('customDomain');
+        const resourceDifficulty = document.getElementById('resourceDifficulty');
+        const resourceDuration = document.getElementById('resourceDuration');
+        const addResourceBtn = document.getElementById('addResourceBtn');
+        const clearResourcesBtn = document.getElementById('clearResourcesBtn');
+        const resourcesList = document.getElementById('resourcesList');
+        const noResources = document.getElementById('noResources');
+        const totalDays = document.getElementById('totalDays');
+        const dailyHours = document.getElementById('dailyHours');
+        const generatePlanBtn = document.getElementById('generatePlanBtn');
+        const resetPlanBtn = document.getElementById('resetPlanBtn');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const importDataBtn = document.getElementById('importDataBtn');
+        const importFile = document.getElementById('importFile');
+        const difficultySuggestion = document.getElementById('difficultySuggestion');
+        const progressNav = document.getElementById('progressNav');
+        const levelsContainer = document.getElementById('levelsContainer');
+        
+        // 初始化
+        loadCustomDomains();
+        renderResourcesList();
+        setupEventListeners();
+        
+        // 新增：尝试恢复已保存的学习计划
+        restoreSavedPlan();
+        
+        function setupEventListeners() {
+            // URL输入事件监听（难度建议）
+            resourceUrl.addEventListener('input', suggestDifficulty);
+            
+            // 自定义领域输入
+            customDomain.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addCustomDomain();
+                }
+            });
+            
+            // 添加资料
+            addResourceBtn.addEventListener('click', addResource);
+            
+            // 清空资料
+            clearResourcesBtn.addEventListener('click', clearResources);
+            
+            // 生成计划
+            generatePlanBtn.addEventListener('click', generateLearningPlan);
+            
+            // 重置计划
+            resetPlanBtn.addEventListener('click', resetPlan);
+            
+            // 导出数据
+            exportDataBtn.addEventListener('click', exportData);
+            
+            // 导入数据
+            importDataBtn.addEventListener('click', () => importFile.click());
+            importFile.addEventListener('change', importData);
+            
+            // 新增：保存排期参数的输入事件
+            totalDays.addEventListener('input', savePlanningParams);
+            dailyHours.addEventListener('input', savePlanningParams);
+        }
+        
+        // 新增：保存排期参数
+        function savePlanningParams() {
+            const days = totalDays.value.trim();
+            const hours = dailyHours.value.trim();
+            if (days) localStorage.setItem('totalDays', days);
+            if (hours) localStorage.setItem('dailyHours', hours);
+        }
+        
+        // 加载自定义领域
+        function loadCustomDomains() {
+            // 清空现有的自定义选项（保留预设选项）
+            const presetOptions = ['编程', '设计', '语言', '商业', '其他'];
+            const existingOptions = Array.from(resourceDomain.options).map(opt => opt.value);
+            existingOptions.forEach(option => {
+                if (!presetOptions.includes(option) && option !== '') {
+                    const optElement = resourceDomain.querySelector(`option[value="${option}"]`);
+                    if (optElement) optElement.remove();
+                }
+            });
+            
+            // 添加自定义领域选项 - 按字母顺序排序
+            const sortedCustomDomains = [...customDomains].sort();
+            sortedCustomDomains.forEach(domain => {
+                if (!presetOptions.includes(domain)) {
+                    const option = document.createElement('option');
+                    option.value = domain;
+                    option.textContent = domain;
+                    // 找到"其他"选项并插入在其前面
+                    const otherOption = resourceDomain.querySelector('option[value="其他"]');
+                    if (otherOption) {
+                        otherOption.parentNode.insertBefore(option, otherOption);
+                    } else {
+                        // 如果没有"其他"选项，添加到最后
+                        resourceDomain.appendChild(option);
+                    }
+                }
+            });
+        }
+        
+        // 添加自定义领域
+        function addCustomDomain() {
+            const domain = customDomain.value.trim();
+            if (domain && !customDomains.includes(domain)) {
+                customDomains.push(domain);
+                localStorage.setItem('customDomains', JSON.stringify(customDomains));
+                
+                const option = document.createElement('option');
+                option.value = domain;
+                option.textContent = domain;
+                resourceDomain.appendChild(option);
+                
+                customDomain.value = '';
+            }
+        }
+        
+        // 难度建议
+        function suggestDifficulty() {
+            const url = resourceUrl.value.toLowerCase();
+            let suggestion = '';
+            
+            if (url.includes('beginner') || url.includes('零基础') || url.includes('入门') || url.includes('新手')) {
+                suggestion = '检测到关键词"零基础/入门"，建议难度等级选择：入门';
+                resourceDifficulty.value = 'beginner';
+            } else if (url.includes('intermediate') || url.includes('进阶') || url.includes('中级')) {
+                suggestion = '检测到关键词"进阶/中级"，建议难度等级选择：进阶';
+                resourceDifficulty.value = 'intermediate';
+            } else if (url.includes('advanced') || url.includes('高级') || url.includes('高阶') || url.includes('大师')) {
+                suggestion = '检测到关键词"高级/高阶"，建议难度等级选择：高阶';
+                resourceDifficulty.value = 'advanced';
+            } else if (url.includes('速成') || url.includes('快速')) {
+                suggestion = '检测到关键词"速成/快速"，建议难度等级选择：进阶';
+                resourceDifficulty.value = 'intermediate';
+            } else {
+                suggestion = '';
+                resourceDifficulty.value = ''; // 保持为空
+            }
+            
+            difficultySuggestion.textContent = suggestion;
+            difficultySuggestion.style.color = '#666';
+        }
+        
+        // 添加资料
+        function addResource() {
+            const title = resourceTitle.value.trim();
+            const url = resourceUrl.value.trim();
+            // 修复领域值获取逻辑 - 使用selectedIndex准确判断
+            let domain = '';
+            if (resourceDomain.selectedIndex > 0) {
+                // 用户选择了下拉菜单中的选项（包括自定义选项）
+                domain = resourceDomain.value;
+            } else if (customDomain.value.trim()) {
+                // 用户在自定义输入框中输入了内容
+                domain = customDomain.value.trim();
+            }
+            
+            const difficulty = resourceDifficulty.value;
+            const duration = parseFloat(resourceDuration.value);
+            
+            if (!title || !url || !domain || !difficulty || isNaN(duration) || duration <= 0) {
+                alert('请填写完整且有效的资料信息！\n注意：领域/类别需要选择下拉选项或填写自定义内容。');
+                return;
+            }
+            
+            // 如果是自定义领域且未保存过，保存到自定义领域列表
+            if (customDomain.value.trim() && !customDomains.includes(customDomain.value.trim())) {
+                customDomains.push(customDomain.value.trim());
+                localStorage.setItem('customDomains', JSON.stringify(customDomains));
+                loadCustomDomains(); // 重新加载下拉选项
+            }
+            
+            if (currentEditingId !== null) {
+                // 编辑模式
+                const index = resources.findIndex(r => r.id === currentEditingId);
+                if (index !== -1) {
+                    resources[index] = {
+                        id: currentEditingId,
+                        title,
+                        url,
+                        domain,
+                        difficulty,
+                        duration: parseFloat(resourceDuration.value)
+                    };
+                }
+                currentEditingId = null;
+                addResourceBtn.textContent = '添加资料';
+            } else {
+                // 新增模式
+                resources.push({
+                    id: Date.now(),
+                    title,
+                    url,
+                    domain,
+                    difficulty,
+                    duration: parseFloat(resourceDuration.value)
+                });
+            }
+            
+            saveResources();
+            renderResourcesList();
+            
+            // 清空表单
+            resourceTitle.value = '';
+            resourceUrl.value = '';
+            customDomain.value = '';
+            resourceDomain.selectedIndex = 0; // 重置为默认选项
+            resourceDifficulty.value = '';
+            resourceDuration.value = '';
+            difficultySuggestion.textContent = '';
+        }
+        
+        // 清空所有资料
+        function clearResources() {
+            if (confirm('确定要清空所有学习资料吗？')) {
+                resources = [];
+                saveResources();
+                renderResourcesList();
+                levelsContainer.innerHTML = '';
+                progressNav.innerHTML = '';
+                // 同时清除相关的计划数据和打卡数据
+                localStorage.removeItem('learningPlanData');
+                completedDays = [];
+                saveCompletedDays();
+            }
+        }
+        
+        // 保存资料到 localStorage
+        function saveResources() {
+            localStorage.setItem('learningResources', JSON.stringify(resources));
+        }
+        
+        // 渲染资料列表
+        function renderResourcesList() {
+            if (resources.length === 0) {
+                noResources.style.display = 'block';
+                return;
+            }
+            
+            noResources.style.display = 'none';
+            resourcesList.innerHTML = '';
+            
+            resources.forEach(resource => {
+                const difficultyText = {
+                    beginner: '入门',
+                    intermediate: '进阶',
+                    advanced: '高阶'
+                };
+                
+                const difficultyClass = {
+                    beginner: 'difficulty-beginner',
+                    intermediate: 'difficulty-intermediate',
+                    advanced: 'difficulty-advanced'
+                };
+                
+                const resourceItem = document.createElement('div');
+                resourceItem.className = 'resource-item';
+                resourceItem.innerHTML = `
+                    <div class="resource-info">
+                        <h4>${resource.title}</h4>
+                        <a href="${resource.url}" target="_blank">${resource.url}</a>
+                        <div class="resource-meta">
+                            <span class="difficulty-badge ${difficultyClass[resource.difficulty]}">${difficultyText[resource.difficulty]}</span>
+                            <span>${resource.domain}</span>
+                            <span>${resource.duration} 小时</span>
+                        </div>
+                    </div>
+                    <div class="resource-actions">
+                        <button class="action-btn" onclick="editResource(${resource.id})">编辑</button>
+                        <button class="action-btn btn-danger" onclick="deleteResource(${resource.id})">删除</button>
+                    </div>
+                `;
+                resourcesList.appendChild(resourceItem);
+            });
+        }
+        
+        // 编辑资料
+        function editResource(id) {
+            const resource = resources.find(r => r.id === id);
+            if (resource) {
+                resourceTitle.value = resource.title;
+                resourceUrl.value = resource.url;
+                resourceDuration.value = resource.duration;
+                resourceDifficulty.value = resource.difficulty;
+                
+                // 设置领域 - 正确处理自定义领域回显
+                const presetDomains = ['编程', '设计', '语言', '商业', '其他'];
+                if (presetDomains.includes(resource.domain)) {
+                    // 是预设领域
+                    resourceDomain.value = resource.domain;
+                    customDomain.value = '';
+                } else {
+                    // 是自定义领域 - 选择对应的选项
+                    resourceDomain.value = resource.domain;
+                    customDomain.value = '';
+                }
+                
+                currentEditingId = id;
+                addResourceBtn.textContent = '更新资料';
+                suggestDifficulty(); // 触发难度建议
+                
+                // 自动滚动到添加资料区域
+                addResourceCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        
+        // 删除资料
+        function deleteResource(id) {
+            if (confirm('确定要删除这个资料吗？')) {
+                resources = resources.filter(r => r.id !== id);
+                saveResources();
+                renderResourcesList();
+            }
+        }
+        
+        // 生成学习计划
+        function generateLearningPlan() {
+            // 添加详细的验证提示
+            if (resources.length === 0) {
+                alert('❌ 无法生成学习计划！\n\n请先在"我的学习资料库"中添加至少一个学习资料。');
+                return;
+            }
+
+            const daysInput = totalDays.value.trim();
+            const hoursInput = dailyHours.value.trim();
+
+            if (!daysInput || !hoursInput) {
+                alert('❌ 请填写完整的排期参数！\n\n需要设置"总学习天数"和"每日学习时长"。');
+                return;
+            }
+
+            const days = parseInt(daysInput);
+            const hours = parseFloat(hoursInput);
+
+            if (isNaN(days) || days <= 0) {
+                alert('❌ 总学习天数必须是大于0的整数！\n\n例如：30、60、90等。');
+                return;
+            }
+
+            if (isNaN(hours) || hours <= 0) {
+                alert('❌ 每日学习时长必须是大于0的数字！\n\n例如：1、1.5、2等。');
+                return;
+            }
+
+            // 显示加载状态
+            const loadingMsg = document.createElement('div');
+            loadingMsg.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 9999;';
+            loadingMsg.textContent = '正在生成学习计划，请稍候...';
+            document.body.appendChild(loadingMsg);
+
+            // 按难度排序资源
+            const sortedResources = [...resources].sort((a, b) => {
+                const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
+                return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty];
+            });
+
+            // 创建关卡配置 - 修正：明确指定各阶段的天数范围
+            const levelsConfig = [
+                { id: 'beginner', name: '🌱 新手村', days: [], color: 'beginner', maxDays: 7 },
+                { id: 'intermediate', name: '🔥 训练营', days: [], color: 'intermediate', maxDays: 14 },
+                { id: 'advanced', name: '💎 大师殿', days: [], color: 'advanced', maxDays: days - 21 }
+            ];
+
+            // 分配天数到关卡 - 修正：确保所有天数都被分配且顺序正确
+            let dayCounter = 1;
+            levelsConfig.forEach(level => {
+                // 确保当前关卡有足够的天数
+                const levelDays = Math.min(level.maxDays > 0 ? level.maxDays : days - dayCounter + 1, days - dayCounter + 1);
+                for (let i = 0; i < levelDays && dayCounter <= days; i++) {
+                    level.days.push(dayCounter);
+                    dayCounter++;
+                }
+            });
+
+            // 移除空关卡
+            const validLevels = levelsConfig.filter(level => level.days.length > 0);
+
+            // 分配任务到每天（简化版：按顺序分配）
+            const dailyTasks = {};
+            for (let day = 1; day <= days; day++) {
+                dailyTasks[day] = [];
+            }
+
+            // 按难度分组资源
+            const resourcesByDifficulty = {
+                beginner: sortedResources.filter(r => r.difficulty === 'beginner'),
+                intermediate: sortedResources.filter(r => r.difficulty === 'intermediate'),
+                advanced: sortedResources.filter(r => r.difficulty === 'advanced')
+            };
+
+            // 简化分配逻辑：逐个分配资源，避免轮询带来的性能开销
+            Object.keys(resourcesByDifficulty).forEach(difficulty => {
+                const resourcesList = resourcesByDifficulty[difficulty];
+                if (resourcesList.length === 0) return;
+
+                // 找到该难度对应的关卡天数范围
+                const levelDays = validLevels.find(l => l.color === difficulty)?.days || [];
+                if (levelDays.length === 0) return;
+
+                // 按顺序分配每个资源
+                resourcesList.forEach(resource => {
+                    const remainingDuration = resource.duration;
+                    let assignedDuration = 0;
+
+                    // 遍历该难度的所有天数
+                    levelDays.forEach(day => {
+                        if (assignedDuration >= remainingDuration) return;
+
+                        const currentDayTasks = dailyTasks[day];
+                        const currentDayTotal = currentDayTasks.reduce((sum, task) => sum + task.duration, 0);
+                        const availableToday = hours - currentDayTotal;
+
+                        if (availableToday <= 0) return;
+
+                        const assignHours = Math.min(remainingDuration - assignedDuration, availableToday);
+                        dailyTasks[day].push({
+                            title: resource.title,
+                            duration: assignHours,
+                            difficulty: resource.difficulty
+                        });
+
+                        assignedDuration += assignHours;
+                    });
+                });
+            });
+
+            // 保存计划数据到 localStorage
+            const planData = {
+                levels: validLevels,
+                dailyTasks: dailyTasks,
+                dailyHours: hours,
+                totalDays: days,
+                generatedAt: new Date().toISOString()
+            };
+            localStorage.setItem('learningPlanData', JSON.stringify(planData));
+            savedPlanData = planData; // 更新内存中的计划数据
+            
+            // 渲染关卡系统 - 修正：使用正确的天数范围
+            renderLevelSystem(validLevels, dailyTasks, hours);
+
+            // 移除加载提示
+            if (loadingMsg.parentNode) {
+                document.body.removeChild(loadingMsg);
+            }
+        }
+        
+        // 新增：恢复已保存的学习计划
+        function restoreSavedPlan() {
+            // 恢复排期参数
+            totalDays.value = savedTotalDays;
+            dailyHours.value = savedDailyHours;
+            
+            // 恢复学习计划
+            if (savedPlanData) {
+                try {
+                    renderLevelSystem(savedPlanData.levels, savedPlanData.dailyTasks, savedPlanData.dailyHours);
+                } catch (error) {
+                    console.warn('Failed to restore saved plan:', error);
+                    // 如果恢复失败，清除无效数据
+                    localStorage.removeItem('learningPlanData');
+                }
+            }
+        }
+        
+        // 修改渲染函数以正确显示天数范围
+        function renderLevelSystem(levels, dailyTasks, dailyHours) {
+            // 清空容器
+            levelsContainer.innerHTML = '';
+            progressNav.innerHTML = '';
+
+            // 创建导航项
+            levels.forEach((level, index) => {
+                const navItem = document.createElement('div');
+                navItem.className = `nav-item nav-${level.color}`;
+                if (index === 0) {
+                    navItem.classList.add('nav-current');
+                }
+                navItem.textContent = level.name;
+                navItem.dataset.level = level.id;
+                navItem.onclick = () => scrollToLevel(level.id);
+                progressNav.appendChild(navItem);
+            });
+
+            // 创建关卡卡片 - 所有关卡都可展开/收起，不使用锁定状态
+            levels.forEach((level, index) => {
+                const levelCard = document.createElement('div');
+                levelCard.className = `level-card level-${level.color}`;
+                levelCard.dataset.levelId = level.id;
+
+                // 修正：正确计算关卡的天数范围
+                const startDay = level.days[0];
+                const endDay = level.days[level.days.length - 1];
+
+                // 确保每天都有对应的 task 显示
+                let dayCellsHtml = '';
+                for (let day of level.days) {
+                    const tasksForDay = dailyTasks[day] || [];
+                    const isCompleted = completedDays.includes(day);
+                    dayCellsHtml += `
+                        <div class="day-cell">
+                            <div class="day-content">
+                                <div class="day-number">第${day}天</div>
+                                <div class="day-tasks">
+                                    ${tasksForDay.length > 0 
+                                        ? tasksForDay.map(task => `
+                                            <div class="task-item" title="${task.title}">${task.title} (${task.duration.toFixed(1)}h)</div>
+                                        `).join('')
+                                        : '<div style="color: #666; font-style: italic;">今日无任务</div>'
+                                    }
+                                </div>
+                            </div>
+                            <button class="completion-btn ${isCompleted ? 'completed' : ''}" onclick="toggleDayCompletion(${day})">
+                                ${isCompleted ? '✅ 已完成' : '☑️ 打卡'}
+                            </button>
+                        </div>
+                    `;
+                }
+
+                levelCard.innerHTML = `
+                    <div class="level-header" onclick="toggleLevel('${level.id}')">
+                        <span>${level.name}</span>
+                        <span>第${startDay}-${endDay}天</span>
+                    </div>
+                    <div class="level-content">
+                        ${dayCellsHtml}
+                    </div>
+                `;
+
+                levelsContainer.appendChild(levelCard);
+
+                // 默认只展开第一个关卡
+                if (index === 0) {
+                    levelCard.classList.add('level-expanded');
+                }
+            });
+        }
+        
+        // 切换关卡展开/折叠
+        function toggleLevel(levelId) {
+            const levelCard = document.querySelector(`.level-card[data-level-id="${levelId}"]`);
+            if (levelCard) {
+                levelCard.classList.toggle('level-expanded');
+            }
+        }
+        
+        // 滚动到指定关卡
+        function scrollToLevel(levelId) {
+            const levelCard = document.querySelector(`.level-card[data-level-id="${levelId}"]`);
+            if (levelCard) {
+                levelCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 展开该关卡
+                if (!levelCard.classList.contains('level-expanded')) {
+                    levelCard.classList.add('level-expanded');
+                }
+            }
+        }
+        
+        // 重置计划
+        function resetPlan() {
+            levelsContainer.innerHTML = '';
+            progressNav.innerHTML = '';
+            // 清除保存的计划数据
+            localStorage.removeItem('learningPlanData');
+            // 同时清除打卡数据
+            completedDays = [];
+            saveCompletedDays();
+        }
+        
+        // 清空所有资料
+        function clearResources() {
+            if (confirm('确定要清空所有学习资料吗？')) {
+                resources = [];
+                saveResources();
+                renderResourcesList();
+                levelsContainer.innerHTML = '';
+                progressNav.innerHTML = '';
+                // 同时清除相关的计划数据和打卡数据
+                localStorage.removeItem('learningPlanData');
+                completedDays = [];
+                saveCompletedDays();
+            }
+        }
+        
+        // 导出数据
+        function exportData() {
+            const data = {
+                resources: resources,
+                customDomains: customDomains,
+                completedDays: completedDays // 新增：导出打卡状态
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '自学闯关数据.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // 导入数据
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (data.resources && Array.isArray(data.resources)) {
+                        resources = data.resources;
+                        if (data.customDomains && Array.isArray(data.customDomains)) {
+                            customDomains = data.customDomains;
+                            localStorage.setItem('customDomains', JSON.stringify(customDomains));
+                            // 重新加载自定义领域
+                            resourceDomain.innerHTML = '<option value="">请选择领域</option><option value="编程">编程</option><option value="设计">设计</option><option value="语言">语言</option><option value="商业">商业</option><option value="其他">其他</option>';
+                            loadCustomDomains();
+                        }
+                        // 新增：导入打卡状态
+                        if (data.completedDays && Array.isArray(data.completedDays)) {
+                            completedDays = data.completedDays;
+                            saveCompletedDays();
+                        }
+                        saveResources();
+                        renderResourcesList();
+                        alert('数据导入成功！');
+                    } else {
+                        alert('数据格式不正确！');
+                    }
+                } catch (error) {
+                    alert('导入失败：' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            importFile.value = ''; // 重置文件输入
+        }
+        
+        // 新增：保存打卡状态
+        function saveCompletedDays() {
+            localStorage.setItem('completedDays', JSON.stringify(completedDays));
+        }
+        
+        // 新增：打卡功能
+        function toggleDayCompletion(day) {
+            const index = completedDays.indexOf(day);
+            if (index > -1) {
+                // 取消打卡
+                completedDays.splice(index, 1);
+            } else {
+                // 打卡
+                completedDays.push(day);
+            }
+            saveCompletedDays();
+            // 重新渲染关卡系统以更新打卡状态
+            if (savedPlanData) {
+                renderLevelSystem(savedPlanData.levels, savedPlanData.dailyTasks, savedPlanData.dailyHours);
+            }
+        }
+        
+        // 全局函数暴露给HTML
+        window.editResource = editResource;
+        window.deleteResource = deleteResource;
+        window.toggleLevel = toggleLevel;
+        window.scrollToLevel = scrollToLevel;
+        window.toggleDayCompletion = toggleDayCompletion;
+        
+        // 新增：回到顶部功能
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 100) {
+                document.getElementById('backToTopBtn').style.display = 'block';
+            } else {
+                document.getElementById('backToTopBtn').style.display = 'none';
+            }
+        });
+
+        document.getElementById('backToTopBtn').addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+</body>
+</html>
