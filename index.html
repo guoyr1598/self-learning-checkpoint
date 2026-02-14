@@ -667,11 +667,21 @@
         renderResourcesList();
         setupEventListeners();
         
-        // 新增：尝试从URL参数导入数据
+        // 尝试从URL参数导入数据
         importFromUrl();
         
-        // 新增：尝试恢复已保存的学习计划
-        restoreSavedPlan();
+        // 尝试恢复已保存的学习计划
+        const savedPlan = localStorage.getItem('learningPlanData');
+        if (savedPlan) {
+            try {
+                savedPlanData = JSON.parse(savedPlan);
+                renderLevelSystem(savedPlanData.levels, savedPlanData.dailyTasks, savedPlanData.dailyHours);
+            } catch (e) {
+                console.error('恢复学习计划失败:', e);
+                localStorage.removeItem('learningPlanData');
+                savedPlanData = null;
+            }
+        }
         
         function setupEventListeners() {
             // URL输入事件监听（难度建议）
@@ -1095,24 +1105,6 @@
             }
         }
         
-        // 新增：恢复已保存的学习计划
-        function restoreSavedPlan() {
-            // 恢复排期参数
-            totalDays.value = savedTotalDays;
-            dailyHours.value = savedDailyHours;
-            
-            // 恢复学习计划
-            if (savedPlanData) {
-                try {
-                    renderLevelSystem(savedPlanData.levels, savedPlanData.dailyTasks, savedPlanData.dailyHours);
-                } catch (error) {
-                    console.warn('Failed to restore saved plan:', error);
-                    // 如果恢复失败，清除无效数据
-                    localStorage.removeItem('learningPlanData');
-                }
-            }
-        }
-        
         // 修改渲染函数以正确显示天数范围
         function renderLevelSystem(levels, dailyTasks, dailyHours) {
             // 清空容器
@@ -1237,7 +1229,8 @@
             const data = {
                 resources: resources,
                 customDomains: customDomains,
-                completedDays: completedDays // 新增：导出打卡状态
+                completedDays: completedDays, // 打卡状态
+                learningPlanData: JSON.parse(localStorage.getItem('learningPlanData') || 'null') // 学习计划数据
             };
             
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1252,12 +1245,85 @@
             URL.revokeObjectURL(url);
         }
         
-        // 新增：生成分享链接
+        // 新增：生成分享界面
+        function showShareDialog(shareUrl) {
+            // 创建分享对话框
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+            
+            const content = document.createElement('div');
+            content.style.cssText = `
+                background: white;
+                padding: 20px;
+                border-radius: 12px;
+                max-width: 90%;
+                max-height: 90%;
+                overflow-y: auto;
+                text-align: center;
+            `;
+            
+            content.innerHTML = `
+                <h3 style="margin-top: 0;">📱 分享到手机</h3>
+                <p>请在手机浏览器中打开以下链接：</p>
+                <div style="background: #f5f5f5; padding: 10px; border-radius: 8px; margin: 10px 0; word-break: break-all;">
+                    ${shareUrl}
+                </div>
+                <button id="copyShareUrlBtn" style="background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; margin: 10px;">
+                    复制链接
+                </button>
+                <p style="font-size: 0.9em; color: #666; margin-top: 15px;">
+                    💡 提示：苹果用户建议复制链接后在Safari中粘贴打开
+                </p>
+                <button id="closeShareDialogBtn" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 6px; margin-top: 10px;">
+                    关闭
+                </button>
+            `;
+            
+            dialog.appendChild(content);
+            document.body.appendChild(dialog);
+            
+            // 复制链接按钮
+            document.getElementById('copyShareUrlBtn').addEventListener('click', () => {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        alert('✅ 链接已复制！');
+                    });
+                } else {
+                    fallbackCopyTextToClipboard(shareUrl);
+                }
+            });
+            
+            // 关闭按钮
+            document.getElementById('closeShareDialogBtn').addEventListener('click', () => {
+                document.body.removeChild(dialog);
+            });
+            
+            // 点击背景关闭
+            dialog.addEventListener('click', (e) => {
+                if (e.target === dialog) {
+                    document.body.removeChild(dialog);
+                }
+            });
+        }
+        
+        // 修改生成分享链接函数，使用分享界面
         function generateShareLink() {
             const data = {
                 resources: resources,
                 customDomains: customDomains,
-                completedDays: completedDays
+                completedDays: completedDays,
+                learningPlanData: JSON.parse(localStorage.getItem('learningPlanData') || 'null')
             };
             
             // 检查是否有数据可分享
@@ -1274,18 +1340,9 @@
                 // 生成分享链接
                 const shareUrl = `${window.location.origin}${window.location.pathname}?import=${encodedData}`;
                 
-                // 复制到剪贴板
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(shareUrl).then(() => {
-                        alert('✅ 分享链接已复制到剪贴板！\n\n在其他设备粘贴此链接即可同步所有学习数据。');
-                    }).catch(err => {
-                        // 备用复制方法
-                        fallbackCopyTextToClipboard(shareUrl);
-                    });
-                } else {
-                    // 备用复制方法
-                    fallbackCopyTextToClipboard(shareUrl);
-                }
+                // 显示分享界面而不是直接复制
+                showShareDialog(shareUrl);
+                
             } catch (error) {
                 console.error('生成分享链接失败:', error);
                 alert('❌ 生成分享链接失败，请稍后重试。');
@@ -1330,6 +1387,7 @@
                         resources = [];
                         customDomains = [];
                         completedDays = [];
+                        savedPlanData = null;
                         
                         // 导入新数据
                         resources = data.resources;
@@ -1343,21 +1401,31 @@
                         if (data.completedDays && Array.isArray(data.completedDays)) {
                             completedDays = data.completedDays;
                         }
+                        // 导入学习计划数据
+                        if (data.learningPlanData) {
+                            localStorage.setItem('learningPlanData', JSON.stringify(data.learningPlanData));
+                            savedPlanData = data.learningPlanData;
+                        } else {
+                            localStorage.removeItem('learningPlanData');
+                        }
                         
                         // 保存并渲染
                         saveResources();
                         saveCompletedDays();
                         renderResourcesList();
                         
-                        // 尝试恢复学习计划
+                        // 渲染学习计划
                         if (savedPlanData) {
                             renderLevelSystem(savedPlanData.levels, savedPlanData.dailyTasks, savedPlanData.dailyHours);
+                        } else {
+                            levelsContainer.innerHTML = '';
+                            progressNav.innerHTML = '';
                         }
                         
                         // 清除URL参数避免重复导入
                         history.replaceState({}, '', window.location.pathname);
                         
-                        alert('✅ 数据导入成功！\n\n您的学习资料和进度已同步完成。');
+                        alert('✅ 数据导入成功！\n\n您的学习资料、计划和进度已同步完成。');
                     }
                 } catch (error) {
                     console.error('从URL导入数据失败:', error);
@@ -1384,19 +1452,39 @@
                             resourceDomain.innerHTML = '<option value="">请选择领域</option><option value="编程">编程</option><option value="设计">设计</option><option value="语言">语言</option><option value="商业">商业</option><option value="其他">其他</option>';
                             loadCustomDomains();
                         }
-                        // 新增：导入打卡状态
+                        // 导入打卡状态
                         if (data.completedDays && Array.isArray(data.completedDays)) {
                             completedDays = data.completedDays;
                             saveCompletedDays();
                         }
+                        // 导入学习计划数据
+                        if (data.learningPlanData) {
+                            localStorage.setItem('learningPlanData', JSON.stringify(data.learningPlanData));
+                            savedPlanData = data.learningPlanData;
+                        } else {
+                            // 清除旧的学习计划
+                            localStorage.removeItem('learningPlanData');
+                            savedPlanData = null;
+                        }
                         saveResources();
                         renderResourcesList();
-                        alert('数据导入成功！');
+                        
+                        // 尝试渲染学习计划
+                        if (savedPlanData) {
+                            renderLevelSystem(savedPlanData.levels, savedPlanData.dailyTasks, savedPlanData.dailyHours);
+                        } else {
+                            // 清空学习计划显示
+                            levelsContainer.innerHTML = '';
+                            progressNav.innerHTML = '';
+                        }
+                        
+                        alert('✅ 数据导入成功！\n\n所有学习资料、计划和进度已同步完成。');
                     } else {
-                        alert('数据格式不正确！');
+                        alert('❌ 数据格式不正确！');
                     }
                 } catch (error) {
-                    alert('导入失败：' + error.message);
+                    console.error('导入失败:', error);
+                    alert('❌ 导入失败：' + error.message);
                 }
             };
             reader.readAsText(file);
