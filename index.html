@@ -667,6 +667,9 @@
         renderResourcesList();
         setupEventListeners();
         
+        // 清理过期的分享数据
+        cleanupExpiredShares();
+        
         // 尝试从URL参数导入数据
         importFromUrl();
         
@@ -1319,64 +1322,43 @@
         
         // 修改生成分享链接函数，使用分享界面
         function generateShareLink() {
-            const data = {
+            // 生成一个唯一的临时ID（UUID）
+            const id = generateUUID();
+            
+            // 将当前的学习计划数据保存到localStorage，以ID为键
+            const dataToSave = {
                 resources: resources,
                 customDomains: customDomains,
                 completedDays: completedDays,
-                learningPlanData: JSON.parse(localStorage.getItem('learningPlanData') || 'null')
+                learningPlanData: savedPlanData
             };
             
-            // 检查是否有数据可分享
-            if (resources.length === 0) {
-                alert('❌ 无法生成分享链接！\n\n请先添加至少一个学习资料。');
-                return;
-            }
+            localStorage.setItem(`share_${id}`, JSON.stringify(dataToSave));
             
-            try {
-                // 编码数据
-                const jsonString = JSON.stringify(data);
-                const encodedData = btoa(encodeURIComponent(jsonString));
-                
-                // 生成分享链接
-                const shareUrl = `${window.location.origin}${window.location.pathname}?import=${encodedData}`;
-                
-                // 显示分享界面而不是直接复制
-                showShareDialog(shareUrl);
-                
-            } catch (error) {
-                console.error('生成分享链接失败:', error);
-                alert('❌ 生成分享链接失败，请稍后重试。');
-            }
+            // 创建分享链接，只包含ID
+            const baseUrl = window.location.origin + window.location.pathname;
+            const shareUrl = `${baseUrl}?share=${id}`;
+            
+            // 显示分享对话框
+            showShareDialog(shareUrl);
         }
-        
-        // 备用复制方法（兼容性处理）
-        function fallbackCopyTextToClipboard(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-999999px";
-            textArea.style.top = "-999999px";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    alert('✅ 分享链接已复制到剪贴板！\n\n在其他设备粘贴此链接即可同步所有学习数据。');
-                } else {
-                    alert('⚠️ 无法自动复制，请手动复制以下链接：\n\n' + text);
-                }
-            } catch (err) {
-                alert('⚠️ 无法自动复制，请手动复制以下链接：\n\n' + text);
-            }
-            document.body.removeChild(textArea);
+
+        // 生成UUID函数
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
         }
-        
-        // 新增：从URL参数导入数据
+
+        // 修改：从URL参数导入数据（支持新的短ID方案）
         function importFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             const importData = urlParams.get('import');
+            const shareId = urlParams.get('share');
             
+            // 处理旧的import参数（向后兼容）
             if (importData) {
                 try {
                     const decodedData = decodeURIComponent(atob(importData));
@@ -1432,63 +1414,126 @@
                     // 不显示错误提示，避免影响正常用户
                 }
             }
-        }
-        
-        // 导入数据
-        function importData(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(event) {
+            // 处理新的share参数
+            else if (shareId) {
                 try {
-                    const data = JSON.parse(event.target.result);
-                    if (data.resources && Array.isArray(data.resources)) {
-                        resources = data.resources;
-                        if (data.customDomains && Array.isArray(data.customDomains)) {
-                            customDomains = data.customDomains;
-                            localStorage.setItem('customDomains', JSON.stringify(customDomains));
-                            // 重新加载自定义领域
-                            resourceDomain.innerHTML = '<option value="">请选择领域</option><option value="编程">编程</option><option value="设计">设计</option><option value="语言">语言</option><option value="商业">商业</option><option value="其他">其他</option>';
-                            loadCustomDomains();
+                    const shareDataStr = localStorage.getItem(`share_${shareId}`);
+                    if (shareDataStr) {
+                        const shareData = JSON.parse(shareDataStr);
+                        const now = Date.now();
+                        
+                        // 检查是否过期（5分钟）
+                        if (now - shareData.timestamp > shareData.expires) {
+                            localStorage.removeItem(`share_${shareId}`);
+                            alert('❌ 分享链接已过期！\n\n请重新生成分享链接。');
+                            // 清除URL参数
+                            history.replaceState({}, '', window.location.pathname);
+                            return;
                         }
-                        // 导入打卡状态
-                        if (data.completedDays && Array.isArray(data.completedDays)) {
-                            completedDays = data.completedDays;
-                            saveCompletedDays();
-                        }
-                        // 导入学习计划数据
-                        if (data.learningPlanData) {
-                            localStorage.setItem('learningPlanData', JSON.stringify(data.learningPlanData));
-                            savedPlanData = data.learningPlanData;
-                        } else {
-                            // 清除旧的学习计划
-                            localStorage.removeItem('learningPlanData');
+                        
+                        const data = shareData.data;
+                        if (data.resources && Array.isArray(data.resources)) {
+                            // 清空现有数据
+                            resources = [];
+                            customDomains = [];
+                            completedDays = [];
                             savedPlanData = null;
+                            
+                            // 导入新数据
+                            resources = data.resources;
+                            if (data.customDomains && Array.isArray(data.customDomains)) {
+                                customDomains = data.customDomains;
+                                localStorage.setItem('customDomains', JSON.stringify(customDomains));
+                                // 重新加载自定义领域
+                                resourceDomain.innerHTML = '<option value="">请选择领域</option><option value="编程">编程</option><option value="设计">设计</option><option value="语言">语言</option><option value="商业">商业</option><option value="其他">其他</option>';
+                                loadCustomDomains();
+                            }
+                            if (data.completedDays && Array.isArray(data.completedDays)) {
+                                completedDays = data.completedDays;
+                            }
+                            // 导入学习计划数据
+                            if (data.learningPlanData) {
+                                localStorage.setItem('learningPlanData', JSON.stringify(data.learningPlanData));
+                                savedPlanData = data.learningPlanData;
+                            } else {
+                                localStorage.removeItem('learningPlanData');
+                            }
+                            
+                            // 保存并渲染
+                            saveResources();
+                            saveCompletedDays();
+                            renderResourcesList();
+                            
+                            // 渲染学习计划
+                            if (savedPlanData) {
+                                renderLevelSystem(savedPlanData.levels, savedPlanData.dailyTasks, savedPlanData.dailyHours);
+                            } else {
+                                levelsContainer.innerHTML = '';
+                                progressNav.innerHTML = '';
+                            }
+                            
+                            // 清除URL参数避免重复导入
+                            history.replaceState({}, '', window.location.pathname);
+                            
+                            alert('✅ 数据导入成功！\n\n您的学习资料、计划和进度已同步完成。');
                         }
-                        saveResources();
-                        renderResourcesList();
-                        
-                        // 尝试渲染学习计划
-                        if (savedPlanData) {
-                            renderLevelSystem(savedPlanData.levels, savedPlanData.dailyTasks, savedPlanData.dailyHours);
-                        } else {
-                            // 清空学习计划显示
-                            levelsContainer.innerHTML = '';
-                            progressNav.innerHTML = '';
-                        }
-                        
-                        alert('✅ 数据导入成功！\n\n所有学习资料、计划和进度已同步完成。');
                     } else {
-                        alert('❌ 数据格式不正确！');
+                        alert('❌ 无效的分享链接！\n\n可能已被删除或过期。');
+                        // 清除URL参数
+                        history.replaceState({}, '', window.location.pathname);
                     }
                 } catch (error) {
-                    console.error('导入失败:', error);
-                    alert('❌ 导入失败：' + error.message);
+                    console.error('从分享ID导入数据失败:', error);
+                    alert('❌ 导入数据失败，请稍后重试。');
+                    // 清除URL参数
+                    history.replaceState({}, '', window.location.pathname);
                 }
-            };
-            reader.readAsText(file);
-            importFile.value = ''; // 重置文件输入
+            }
+        }
+        
+        // 新增：清理过期的分享数据
+        function cleanupExpiredShares() {
+            const now = Date.now();
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('share_')) {
+                    try {
+                        const shareData = JSON.parse(localStorage.getItem(key));
+                        if (now - shareData.timestamp > shareData.expires) {
+                            localStorage.removeItem(key);
+                        }
+                    } catch (e) {
+                        // 如果解析失败，也清理掉
+                        localStorage.removeItem(key);
+                    }
+                }
+            }
+        }
+        
+        // 页面加载时清理过期的分享数据
+        cleanupExpiredShares();
+        
+        // 备用复制方法（兼容性处理）
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    alert('✅ 分享链接已复制到剪贴板！\n\n在其他设备粘贴此链接即可同步所有学习数据。');
+                } else {
+                    alert('⚠️ 无法自动复制，请手动复制以下链接：\n\n' + text);
+                }
+            } catch (err) {
+                alert('⚠️ 无法自动复制，请手动复制以下链接：\n\n' + text);
+            }
+            document.body.removeChild(textArea);
         }
         
         // 新增：保存打卡状态
